@@ -1,0 +1,43 @@
+# Secrets (never commit)
+src/fcm_credentials.h
+**/*adminsdk*.json
+**/*serviceaccount*.json
+**/*service-account*.json
+file_tambahan/
+*.keystore
+*.jks
+key.properties
+
+# PlatformIO / firmware build
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Flutter / Dart
+mobile_app/.dart_tool/
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+mobile_app/build/
+mobile_app/.metadata
+build/
+.dart_tool/
+
+# Android
+**/.kotlin/
+**/android/.gradle/
+**/android/app/build/
+**/android/build/
+**/android/local.properties
+**/android/key.properties
+*.apk
+*.aab
+
+# Editor / OS
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Internal working notes (not part of the project)
+CLAUDE.md

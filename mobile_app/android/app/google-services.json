@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "914277089837",
+    "firebase_url": "https://guppycare-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "guppycare",
+    "storage_bucket": "guppycare.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:914277089837:android:e25069e7e35cbda154aea4",
+        "android_client_info": {
+          "package_name": "com.guppycare.mobile_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "914277089837-ib5nods381ae0nh1rsd7hhtd8446fej3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.guppycare.mobile_app",
+            "certificate_hash": "dbd2572b357ce2f075a95dfeac44da207d984662"
+          }
+        },
+        {
+          "client_id": "914277089837-9lr6o3o4uh6qrr4dmtdk5r8llvqqrgfs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCu4WUgjIVKqX_8k5B737XZGmLC5MF9VQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "914277089837-9lr6o3o4uh6qrr4dmtdk5r8llvqqrgfs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
