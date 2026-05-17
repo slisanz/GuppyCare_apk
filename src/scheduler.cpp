@@ -124,9 +124,8 @@ void seedDefaults() {
 
 // Fast tick: time-match dari cache + cek manual_feed_trigger
 static void fastTick() {
-    if (!TimeSync::isSynced()) return;
-
-    // 1) Manual trigger
+    // 1) Manual trigger — TIDAK butuh jam. Proses walau NTP belum sync,
+    //    biar tombol "Beri Makan Sekarang" tetap jalan tanpa clock.
     String mft = FirebaseClient::getRaw("/manual_feed_trigger");
     if (mft == "true") {
         Serial.println("[Scheduler] manual_feed_trigger=true detected.");
@@ -134,7 +133,8 @@ static void fastTick() {
         FirebaseClient::putBool("/manual_feed_trigger", false);
     }
 
-    // 2) Schedule match (local check, no network)
+    // 2) Schedule match (local check) — BUTUH jam. Skip kalau NTP belum sync.
+    if (!TimeSync::isSynced()) return;
     if (!cacheReady) return;
     String currentHhMm = TimeSync::currentHhMm();
     String curMinKey   = minuteKey();

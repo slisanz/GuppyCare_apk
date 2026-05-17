@@ -17,7 +17,12 @@ class AuthService {
   final _auth = FirebaseAuth.instance;
   bool _gsInitialized = false;
 
-  Stream<User?> get authState => _auth.authStateChanges();
+  // Di-cache jadi satu instance tetap. Kalau dibuat baru tiap akses,
+  // StreamBuilder di AuthGate akan resubscribe tiap rebuild -> connection
+  // balik ke `waiting` -> SplashScreen (gambar) muncul lagi di sela-sela
+  // alur (mis. setelah input Device ID). Stream tunggal = splash hanya
+  // tampil di cold start.
+  late final Stream<User?> authState = _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
 
   Future<void> _ensureGoogleInit() async {

@@ -24,6 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _portionDrag;
   Timer? _portionDebounce;
 
+  // Tick periodik supaya status online (dihitung dari last_seen) tetap
+  // ke-refresh walau RTDB stream berhenti kirim update (device mati).
+  Timer? _onlineTicker;
+
   // Input angka via keyboard. Controller disinkron dari nilai RTDB/slider
   // hanya saat field TIDAK fokus (biar tidak ganggu user yang lagi ngetik).
   final TextEditingController _portionCtrl = TextEditingController();
@@ -38,11 +42,18 @@ class _HomeScreenState extends State<HomeScreen> {
     _portionFocus.addListener(() {
       if (!_portionFocus.hasFocus) _commitPortionField();
     });
+    _onlineTicker = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   @override
   void dispose() {
     _portionDebounce?.cancel();
+    _onlineTicker?.cancel();
     _portionCtrl.dispose();
     _portionFocus.dispose();
     super.dispose();
@@ -113,22 +124,105 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<bool> _confirm(String title, String message) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Lanjut'),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
+  /// Hapus device tersimpan, tetap login Google. `clearDevice()` bump
+  /// `revision` -> AuthGate rebuild -> DeviceSetupScreen (tanpa loading).
+  Future<void> _changeDevice() async {
+    if (!await _confirm(
+      'Ganti Device',
+      'Putuskan dari device sekarang dan isi Device ID lain? '
+          'Akun Google kamu tetap login.',
+    )) {
+      return;
+    }
+    await DeviceService.instance.clearDevice();
+  }
+
+  /// Hapus device tersimpan + logout Google. `signOut()` -> stream auth
+  /// emit null -> AuthGate rebuild -> LoginScreen (tanpa loading).
+  Future<void> _logout() async {
+    if (!await _confirm(
+      'Keluar',
+      'Keluar dari akun? Kamu perlu login Google & isi Device ID lagi.',
+    )) {
+      return;
+    }
+    await DeviceService.instance.clearDevice();
+    await AuthService.instance.signOut();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF2F7),
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Feeding Schedule'),
+        backgroundColor: AppColors.navy,
+        surfaceTintColor: Colors.transparent,
+        elevation: 4,
+        scrolledUnderElevation: 4,
+        shadowColor: Colors.black54,
+        titleSpacing: 18,
+        toolbarHeight: 62,
+        title: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.set_meal, size: 19,
+                  color: Colors.white),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Feeding Schedule',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
+            tooltip: 'Info',
             onPressed: _showInfo,
             icon: const Icon(Icons.info_outline),
           ),
           IconButton(
+            tooltip: 'Ganti Device',
+            onPressed: _changeDevice,
+            icon: const Icon(Icons.swap_horiz),
+          ),
+          IconButton(
             tooltip: 'Keluar',
-            onPressed: () => AuthService.instance.signOut(),
+            onPressed: _logout,
             icon: const Icon(Icons.logout),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: StreamBuilder<DeviceState>(
@@ -155,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _onlineChip(d.online),
+              _onlineChip(d.isOnline),
               const SizedBox(height: 12),
               _scheduleCard(d),
               const SizedBox(height: 16),
@@ -165,8 +259,13 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 24),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: AppColors.feedBtn,
+                  foregroundColor: AppColors.feedBtnText,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onPressed: _manualFeed,
                 icon: const Icon(Icons.restaurant),
@@ -184,11 +283,12 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Icon(Icons.circle, size: 10,
-            color: online ? AppColors.ok : AppColors.subtle),
+            color: online ? AppColors.ok : AppColors.subtleOnDark),
         const SizedBox(width: 6),
         Text(
           online ? 'Device online' : 'Device offline',
-          style: const TextStyle(color: AppColors.subtle, fontSize: 12),
+          style: const TextStyle(
+              color: AppColors.subtleOnDark, fontSize: 12),
         ),
       ],
     );
@@ -209,12 +309,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _sectionTitle(String t) => Text(
+  Widget _sectionTitle(String t, {bool onDark = false}) => Text(
         t,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: AppColors.cardText,
+          color: onDark ? Colors.white : AppColors.cardText,
         ),
       );
 
@@ -329,10 +429,11 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            _sectionTitle('Alert'),
+            _sectionTitle('Alert', onDark: true),
             const SizedBox(width: 8),
             Icon(Icons.warning_amber_rounded,
-                color: alert ? AppColors.alert : AppColors.subtle, size: 20),
+                color: alert ? AppColors.alert : AppColors.subtleOnDark,
+                size: 20),
           ],
         ),
         const SizedBox(height: 10),

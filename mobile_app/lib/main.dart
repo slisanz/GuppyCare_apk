@@ -50,28 +50,38 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: AuthService.instance.authState,
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const SplashScreen();
-        }
+    // ValueListenableBuilder: AuthGate rebuild saat device dipasang/dihapus
+    // (Ganti Device) TANPA bikin route/AuthGate baru -> tidak ada loading
+    // screen di sela alur. StreamBuilder pakai stream auth yang di-cache
+    // (lihat AuthService.authState) jadi connection tetap `active` lintas
+    // rebuild -> SplashScreen hanya muncul di cold start.
+    return ValueListenableBuilder<int>(
+      valueListenable: DeviceService.instance.revision,
+      builder: (context, _, child) {
+        return StreamBuilder(
+          stream: AuthService.instance.authState,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const SplashScreen();
+            }
 
-        final user = snap.data;
-        if (user == null) {
-          _fcmRegistered = false;
-          return const LoginScreen();
-        }
+            final user = snap.data;
+            if (user == null) {
+              _fcmRegistered = false;
+              return const LoginScreen();
+            }
 
-        if (!DeviceService.instance.hasDevice) {
-          return DeviceSetupScreen(onLinked: () => setState(() {}));
-        }
+            if (!DeviceService.instance.hasDevice) {
+              return DeviceSetupScreen(onLinked: () => setState(() {}));
+            }
 
-        if (!_fcmRegistered) {
-          _fcmRegistered = true;
-          FcmService.instance.registerForDevice();
-        }
-        return const HomeScreen();
+            if (!_fcmRegistered) {
+              _fcmRegistered = true;
+              FcmService.instance.registerForDevice();
+            }
+            return const HomeScreen();
+          },
+        );
       },
     );
   }

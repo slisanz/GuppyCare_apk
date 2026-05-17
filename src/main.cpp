@@ -34,7 +34,31 @@
 static String deviceId;
 
 constexpr unsigned long HEARTBEAT_MS = 30000;
-constexpr unsigned long LED_BLINK_MS = 1000;
+
+// Tombol fisik reset WiFi di GPIO13 (ke GND, pull-up internal).
+// Tahan >= Cfg::WIFI_RESET_HOLD_MS -> hapus credential WiFi & reboot
+// ke captive portal "GuppyCare-Setup". Dilepas sebelum durasi -> batal.
+void pollWifiResetButton() {
+    static unsigned long pressedSince = 0;   // 0 = tidak ditekan
+    static bool          fired        = false;
+
+    bool down = (digitalRead(Pins::WIFI_RESET_BTN) == LOW);
+    if (!down) {
+        pressedSince = 0;
+        fired = false;
+        return;
+    }
+    unsigned long now = millis();
+    if (pressedSince == 0) {
+        pressedSince = now;
+        return;
+    }
+    if (!fired && now - pressedSince >= Cfg::WIFI_RESET_HOLD_MS) {
+        fired = true;
+        Serial.println("[WiFi] Tombol reset ditahan 3s -> hapus WiFi & reboot.");
+        WifiSetup::resetCredentials();   // erase creds + ESP.restart()
+    }
+}
 
 String makeDeviceId() {
     uint64_t mac = ESP.getEfuseMac();
@@ -113,7 +137,7 @@ void setup() {
     Serial.println(" GuppyCare — Phase 4 (Full System)");
     Serial.println("===========================================");
 
-    pinMode(Pins::LED, OUTPUT);
+    pinMode(Pins::WIFI_RESET_BTN, INPUT_PULLUP);
     analogReadResolution(12);
 
     deviceId = makeDeviceId();
@@ -146,20 +170,17 @@ void setup() {
     Serial.println();
     Serial.println(">>> Phase 4 siap. Full system jalan.");
     Serial.println(">>> Command: ? | seed | trigger | feed N | alert on|off | notif | wifi_reset");
+    Serial.println(">>> Tombol fisik GPIO13: tahan 3 detik untuk reset WiFi.");
     Serial.println();
 }
 
 // =====================================================================
 void loop() {
-    static unsigned long lastLed       = 0;
     static unsigned long lastHeartbeat = 0;
     static String        buf;
     unsigned long now = millis();
 
-    if (now - lastLed >= LED_BLINK_MS) {
-        lastLed = now;
-        digitalWrite(Pins::LED, !digitalRead(Pins::LED));
-    }
+    pollWifiResetButton();
 
     if (now - lastHeartbeat >= HEARTBEAT_MS) {
         lastHeartbeat = now;

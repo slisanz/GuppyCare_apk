@@ -50,6 +50,20 @@ class DeviceState {
     required this.lastSeen,
   });
 
+  /// Status online dihitung dari `last_seen` (heartbeat ESP32 tiap 30s),
+  /// BUKAN dari field `online` — ESP32 cuma pernah nulis online=true dan
+  /// tidak bisa nulis false saat listrik dicabut. Online kalau heartbeat
+  /// terakhir < 90 detik (3x interval heartbeat).
+  bool get isOnline {
+    if (lastSeen.isEmpty) return false;
+    try {
+      final t = DateTime.parse(lastSeen).toUtc();
+      return DateTime.now().toUtc().difference(t).inSeconds < 90;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static const _defaults = [
     FeedSchedule(time: '08:00', enabled: true),
     FeedSchedule(time: '12:00', enabled: false),

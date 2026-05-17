@@ -41,7 +41,7 @@ https://github.com/slisanz/GuppyCare_apk/releases/latest
 
 1. Open the link above in your phone browser.
 2. Scroll down a little until you see the **Assets** section.
-3. Under Assets, tap the file named **GuppyCare-v1.0.0.apk**. The download starts.
+3. Under Assets, tap the file that ends with **.apk** (named GuppyCare with the latest version number). The download starts.
 4. When the download finishes, tap the downloaded file (from the notification bar or your Downloads folder).
 5. Android may say installing from this source is not allowed. Tap **Settings**, turn on **Allow from this source**, then go back.
 6. Tap **Install**, wait a moment, then tap **Open**.
@@ -50,7 +50,7 @@ https://github.com/slisanz/GuppyCare_apk/releases/latest
 
 1. Open the link above in your computer browser.
 2. Scroll down to the **Assets** section under the release.
-3. Click **GuppyCare-v1.0.0.apk** to download it to your computer.
+3. Click the file that ends with **.apk** to download it to your computer.
 4. Move that APK file to your phone (USB cable, Google Drive, WhatsApp to yourself, or any way you normally transfer files).
 5. On the phone, open the APK file and follow steps 5 and 6 from the phone section above to install it.
 

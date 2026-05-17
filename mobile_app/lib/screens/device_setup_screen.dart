@@ -25,6 +25,30 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
     super.dispose();
   }
 
+  Future<void> _logout() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Keluar'),
+        content: const Text(
+            'Keluar dari akun? Kamu perlu login Google lagi.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Lanjut'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await DeviceService.instance.clearDevice();
+    await AuthService.instance.signOut();
+  }
+
   Future<void> _link() async {
     final id = _ctrl.text.trim().toUpperCase();
     if (id.length != 12) {
@@ -68,7 +92,7 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
         actions: [
           IconButton(
             tooltip: 'Keluar',
-            onPressed: () => AuthService.instance.signOut(),
+            onPressed: _logout,
             icon: const Icon(Icons.logout),
           ),
         ],
@@ -91,7 +115,7 @@ class _DeviceSetupScreenState extends State<DeviceSetupScreen> {
             const Text(
               'Device ID = MAC address ESP32 (tampil di Serial Monitor '
               'saat boot, mis. 383B67C8E720).',
-              style: TextStyle(color: AppColors.subtle),
+              style: TextStyle(color: AppColors.subtleOnDark),
             ),
             const SizedBox(height: 24),
             TextField(

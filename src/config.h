@@ -2,9 +2,9 @@
 
 // Pin assignments (sesuai wiring user)
 namespace Pins {
-    constexpr int LED      = 13;   // Status LED
-    constexpr int SERVO    = 18;   // Servo SG90 signal (kuning)
-    constexpr int TDS_ADC  = 34;   // TDS Meter V1.0 analog out
+    constexpr int WIFI_RESET_BTN = 13;   // Tombol fisik reset WiFi (ke GND, pull-up internal)
+    constexpr int SERVO          = 18;   // Servo SG90 signal (kuning)
+    constexpr int TDS_ADC        = 34;   // TDS Meter V1.0 analog out
 }
 
 // Behavior constants
@@ -48,6 +48,9 @@ namespace Cfg {
     // WiFiManager
     constexpr char AP_NAME[] = "GuppyCare-Setup";
     constexpr int AP_TIMEOUT_S = 180;       // 3 menit timeout config portal
+
+    // Tombol fisik reset WiFi: tahan selama ini (ms) baru creds dihapus & reboot
+    constexpr unsigned long WIFI_RESET_HOLD_MS = 3000;
 
     // NTP
     constexpr char NTP_SERVER[]   = "pool.ntp.org";

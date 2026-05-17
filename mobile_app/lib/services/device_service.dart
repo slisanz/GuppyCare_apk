@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/device_state.dart';
@@ -29,6 +30,10 @@ class DeviceService {
   String get deviceId => _deviceId ?? '';
   bool get hasDevice => (_deviceId ?? '').isNotEmpty;
 
+  /// Bump tiap device dipasang/dihapus. AuthGate dengar ini supaya
+  /// re-evaluasi layar TANPA bikin AuthGate baru / loading screen.
+  final ValueNotifier<int> revision = ValueNotifier<int>(0);
+
   DatabaseReference _root(String id) => _db.ref('devices/$id');
 
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
@@ -44,12 +49,14 @@ class DeviceService {
     _deviceId = id.trim().toUpperCase();
     final p = await SharedPreferences.getInstance();
     await p.setString(_prefsKey, _deviceId!);
+    revision.value++;
   }
 
   Future<void> clearDevice() async {
     _deviceId = null;
     final p = await SharedPreferences.getInstance();
     await p.remove(_prefsKey);
+    revision.value++;
   }
 
   /// Klaim kepemilikan device, atau verifikasi akses kalau sudah ada owner.

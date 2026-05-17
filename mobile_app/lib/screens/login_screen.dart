@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.navyDark,
+      backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -53,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 6),
                 const Text(
                   'Smart Guppy Feeder & Water Monitor',
-                  style: TextStyle(color: AppColors.subtle),
+                  style: TextStyle(color: AppColors.subtleOnDark),
                 ),
                 const SizedBox(height: 48),
                 if (_error != null) ...[
