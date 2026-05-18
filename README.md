@@ -88,7 +88,7 @@ https://github.com/slisanz/GuppyCare_apk/releases/latest
 
 1. Open the GuppyCare app.
 2. Sign in with your Google account.
-3. On the Account and Device screen, type the device id in the field and tap the connect button. The device id is the MAC address of the ESP32. It is printed on the Serial Monitor when the device boots, for example 383B67C8E720.
+3. On the Account and Device screen, type the device id in the field and tap the **Link** button. The device id is the MAC address of the ESP32. It is printed on the Serial Monitor when the device boots, for example 383B67C8E720.
 4. Once connected, the home screen shows the feeding schedule, the feed amount, and the water status. You can control everything from your phone.
 
 <p align="center">

@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await _svc.triggerManualFeed();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perintah feed dikirim ke device.')),
+        const SnackBar(content: Text('Feed command sent to the device.')),
       );
     }
   }
@@ -111,9 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('GuppyCare'),
         content: Text(
           'Device: ${_svc.deviceId}\n\n'
-          'Jadwal & porsi yang kamu set di sini langsung dikirim ke '
-          'ESP32 lewat Firebase. Kalau air kotor (TDS > 600 ppm) kamu '
-          'akan dapat notifikasi.',
+          'The schedule and portion you set here go straight to the '
+          'ESP32 through Firebase. If the water gets dirty (TDS > 600 ppm) '
+          'you will get a notification.',
         ),
         actions: [
           TextButton(
@@ -134,11 +134,11 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Lanjut'),
+            child: const Text('Continue'),
           ),
         ],
       ),
@@ -156,8 +156,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// emit null -> AuthGate rebuild -> LoginScreen (tanpa loading).
   Future<void> _logout() async {
     if (!await _confirm(
-      'Keluar',
-      'Keluar dari akun? Kamu perlu login Google & isi Device ID lagi.',
+      'Sign out',
+      'Sign out of your account? You will need to sign in with Google and '
+          'enter the Device ID again.',
     )) {
       return;
     }
@@ -207,12 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.info_outline),
           ),
           IconButton(
-            tooltip: 'Akun & Device',
+            tooltip: 'Account & Device',
             onPressed: _openDeviceManager,
             icon: const Icon(Icons.devices_other),
           ),
           IconButton(
-            tooltip: 'Keluar',
+            tooltip: 'Sign out',
             onPressed: _logout,
             icon: const Icon(Icons.logout),
           ),
@@ -263,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onPressed: _manualFeed,
                 icon: const Icon(Icons.restaurant),
-                label: const Text('Beri Makan Sekarang'),
+                label: const Text('Feed Now'),
               ),
             ],
           );
@@ -452,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   alert
-                      ? 'Status: Ganti air (TDS ${d.tdsPpm.round()} ppm)'
+                      ? 'Status: Change water (TDS ${d.tdsPpm.round()} ppm)'
                       : 'Status: Normal (TDS ${d.tdsPpm.round()} ppm)',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,

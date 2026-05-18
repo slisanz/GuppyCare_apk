@@ -139,7 +139,7 @@ void handleSerialCommand(String cmd) {
     } else if (cmd == "notif") {
         Serial.println("[main] kirim test notif FCM...");
         int n = FcmSender::sendAlert("GuppyCare \xF0\x9F\x90\x9F",
-                                     "Test notif — kalau ini masuk, FCM jalan!");
+                                     "Test notification: if you got this, FCM works!");
         Serial.printf("[main] hasil: %d notif terkirim\n", n);
     } else if (cmd.length() > 0) {
         Serial.printf("[?] Command '%s' tidak dikenali.\n", cmd.c_str());

@@ -69,7 +69,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -82,8 +82,9 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
   }
 
   Future<void> _logout() async {
-    if (!await _confirm('Keluar',
-        'Keluar dari akun? Kamu perlu login Google lagi.', 'Keluar')) {
+    if (!await _confirm('Sign out',
+        'Sign out of your account? You will need to sign in with Google '
+        'again.', 'Sign out')) {
       return;
     }
     await _svc.clearDevice();
@@ -100,7 +101,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
     final id = _ctrl.text.trim().toUpperCase();
     if (id.length != 12) {
       setState(() =>
-          _formError = 'Device ID harus 12 karakter hex (MAC ESP32).');
+          _formError = 'Device ID must be 12 hex characters (ESP32 MAC).');
       return;
     }
     setState(() {
@@ -116,17 +117,17 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
           break;
         case ClaimResult.notFound:
           setState(() => _formError =
-              'Device $id belum pernah online. Nyalakan ESP32 & pastikan '
-              'terhubung WiFi dulu.');
+              'Device $id has never been online. Turn on the ESP32 and make '
+              'sure it is connected to WiFi first.');
           break;
         case ClaimResult.ownedByOther:
           setState(() => _formError =
-              'Device ini sudah dimiliki akun lain. Pemilik harus melepas '
-              'device dulu (atau menambahkan email kamu ke shared_uids).');
+              'This device is already owned by another account. The owner '
+              'must unlink it first (or add your email to shared_uids).');
           break;
       }
     } catch (e) {
-      setState(() => _formError = 'Gagal menghubungkan: $e');
+      setState(() => _formError = 'Failed to connect: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -142,16 +143,16 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
           _afterActive();
           break;
         case ClaimResult.ownedByOther:
-          _snackRemove(id, 'Device $id sekarang dimiliki akun lain.');
+          _snackRemove(id, 'Device $id is now owned by another account.');
           break;
         case ClaimResult.notFound:
-          _snackRemove(id, 'Device $id belum pernah online.');
+          _snackRemove(id, 'Device $id has never been online.');
           break;
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal pindah: $e')),
+          SnackBar(content: Text('Failed to switch: $e')),
         );
       }
     }
@@ -162,7 +163,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
       SnackBar(
         content: Text(msg),
         action: SnackBarAction(
-          label: 'Hapus dari daftar',
+          label: 'Remove from list',
           onPressed: () async {
             await _svc.removeFromLinked(id);
             if (mounted) setState(() {});
@@ -174,10 +175,10 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
 
   Future<void> _unlink(String id) async {
     if (!await _confirm(
-      'Lepas Device',
-      'Lepas device $id dari akunmu? Device bisa dipakai email lain '
-          'setelah dilepas.',
-      'Lepas',
+      'Unlink Device',
+      'Unlink device $id from your account? Another email can use it '
+          'after it is unlinked.',
+      'Unlink',
     )) {
       return;
     }
@@ -195,7 +196,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
         backgroundColor: AppColors.navy,
         surfaceTintColor: Colors.transparent,
         elevation: 4,
-        title: const Text('Akun & Device'),
+        title: const Text('Account & Device'),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -214,11 +215,11 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                     ),
                     onPressed: () => setState(() => _showForm = true),
                     icon: const Icon(Icons.add),
-                    label: const Text('Hubungkan Device Baru'),
+                    label: const Text('Link New Device'),
                   ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Device tertaut:',
+                  'Linked devices:',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -252,7 +253,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
     final u = FirebaseAuth.instance.currentUser;
     final photo = u?.photoURL;
     final name = (u?.displayName ?? '').trim();
-    final email = u?.email ?? '(tidak ada email)';
+    final email = u?.email ?? '(no email)';
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +306,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
               ),
               onPressed: _logout,
               icon: const Icon(Icons.logout, size: 18),
-              label: const Text('Keluar'),
+              label: const Text('Sign out'),
             ),
           ),
         ],
@@ -319,7 +320,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Hubungkan Device Baru',
+            'Link New Device',
             style: TextStyle(
               color: AppColors.cardText,
               fontSize: 16,
@@ -328,8 +329,8 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Device ID = MAC address ESP32 (tampil di Serial Monitor saat '
-            'boot, mis. 383B67C8E720).',
+            'Device ID = the ESP32 MAC address (shown in the Serial Monitor '
+            'at boot, e.g. 383B67C8E720).',
             style: TextStyle(color: AppColors.subtle, fontSize: 12),
           ),
           const SizedBox(height: 14),
@@ -376,7 +377,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                             _showForm = false;
                             _formError = null;
                           }),
-                  child: const Text('Batal'),
+                  child: const Text('Cancel'),
                 ),
               const Spacer(),
               FilledButton(
@@ -393,7 +394,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Hubungkan'),
+                    : const Text('Link'),
               ),
             ],
           ),
@@ -407,7 +408,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
     if (ids.isEmpty) {
       return const [
         Text(
-          'Belum ada device tertaut. Tekan "Hubungkan Device Baru".',
+          'No linked devices yet. Tap "Link New Device".',
           style: TextStyle(color: AppColors.subtleOnDark),
         ),
       ];
@@ -444,7 +445,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                     children: const [
                       Icon(Icons.circle, size: 9, color: AppColors.ok),
                       SizedBox(width: 6),
-                      Text('aktif',
+                      Text('active',
                           style: TextStyle(
                               color: AppColors.ok,
                               fontSize: 12,
@@ -460,13 +461,13 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => _switchTo(id),
-                    child: const Text('Pindah ke device ini'),
+                    child: const Text('Switch to this device'),
                   ),
               ],
             ),
           ),
           IconButton(
-            tooltip: 'Lepas device',
+            tooltip: 'Unlink device',
             color: AppColors.alert,
             onPressed: () => _unlink(id),
             icon: const Icon(Icons.link_off),

@@ -49,8 +49,8 @@ class AuthService {
       throw FirebaseAuthException(
         code: 'missing-id-token',
         message:
-            'Google tidak mengembalikan idToken. Pastikan Web client ID '
-            '(serverClientId) sudah benar di lib/firebase_oauth.dart.',
+            'Google did not return an idToken. Make sure the Web client ID '
+            '(serverClientId) is correct in lib/firebase_oauth.dart.',
       );
     }
 

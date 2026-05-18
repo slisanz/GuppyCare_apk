@@ -9,6 +9,7 @@ constexpr int  DEBOUNCE_COUNT = 3;     // 3x berturut-turut baru toggle alert
 constexpr int  SAMPLES_PER_READ = 10;  // rata-rata 10 sample ADC per pembacaan
 
 static float lastPpmVal     = -1.0f;
+static float publishedPpm   = -1.0f;   // angka terakhir yg KONSISTEN dgn status
 static bool  alerting       = false;
 static int   highStreak     = 0;       // konter ppm > threshold berturut-turut
 static int   lowStreak      = 0;       // konter ppm <= threshold berturut-turut
@@ -50,6 +51,9 @@ static bool evaluateAlert(float ppm) {
     }
 
     if (prevAlerting != alerting) {
+        // Flip: ppm ini SUDAH di sisi yg sesuai status baru -> jadikan
+        // acuan angka konsisten (dipakai "tahan angka" saat debounce).
+        publishedPpm = ppm;
         // 1 request atomik: status + angka mendarat di HP barengan.
         char json[64];
         snprintf(json, sizeof(json),
@@ -60,7 +64,7 @@ static bool evaluateAlert(float ppm) {
             // Baru saja flip ON -> push notif "ganti air" ke HP.
             char body[96];
             snprintf(body, sizeof(body),
-                     "Air kotor (TDS %.0f ppm). Saatnya ganti air akuarium!",
+                     "Water is dirty (TDS %.0f ppm). Time to change the aquarium water!",
                      ppm);
             FcmSender::sendAlert("GuppyCare \xF0\x9F\x90\x9F", body);
         }
@@ -97,12 +101,25 @@ void poll() {
     // sekaligus -> angka & status SELALU mendarat di app berbarengan
     // (1 event RTDB), nggak ada lagi "angka berubah duluan, status nyusul".
     // Jumlah request sama (1 per siklus), cuma PATCH 2 field, bukan PUT 1.
+    //
+    // Anti-kontradiksi: kalau angka mentah ada di sisi ambang yg BERLAWANAN
+    // dgn status (lagi di tengah jendela debounce), JANGAN kirim angka itu.
+    // Tahan di angka konsisten terakhir -> app nggak pernah lihat "status
+    // Alert tapi angka < ambang" atau sebaliknya. Pas status flip, keduanya
+    // loncat barengan (publishedPpm di-update di evaluateAlert).
     if (lastPpmVal >= 0 && now - lastUpload >= Cfg::TDS_UPLOAD_INTERVAL_MS) {
         lastUpload = now;
+        float pub = lastPpmVal;
+        bool ppmHigh = lastPpmVal > Cfg::TDS_THRESHOLD_PPM;
+        if (ppmHigh != alerting && publishedPpm >= 0.0f) {
+            pub = publishedPpm;            // mid-debounce: tahan angka
+        } else {
+            publishedPpm = lastPpmVal;     // konsisten: angka boleh maju
+        }
         char json[64];
         snprintf(json, sizeof(json),
                  "{\"tds_ppm\":%.2f,\"tds_alert\":%s}",
-                 lastPpmVal, alerting ? "true" : "false");
+                 pub, alerting ? "true" : "false");
         FirebaseClient::patchJson("", json);
     }
 }

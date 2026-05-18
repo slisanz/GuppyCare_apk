@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthService.instance.signInWithGoogle();
       // AuthGate akan otomatis pindah ke layar berikutnya.
     } catch (e) {
-      setState(() => _error = 'Login gagal: $e');
+      setState(() => _error = 'Sign-in failed: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.login),
-                    label: Text(_busy ? 'Masuk...' : 'Masuk dengan Google'),
+                    label: Text(_busy ? 'Signing in...' : 'Sign in with Google'),
                   ),
                 ),
               ],
