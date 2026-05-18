@@ -29,6 +29,10 @@ This guide is written for the person who actually uses the device. Follow it in 
 6. On that page, tap your home WiFi network from the list, type your WiFi password, and save.
 7. The device restarts and connects to your home WiFi. The GuppyCare-Setup network disappears once it is connected. Your phone goes back to your normal WiFi.
 
+The pictures below show steps 3 to 7 on the phone: open the WiFi list, tap the GuppyCare-Setup network, and make sure your phone shows it as connected before you go back.
+
+![Connecting your phone to the GuppyCare-Setup network](images/wifi-setup-connect.jpg)
+
 If you ever change your WiFi or move the device to a new place, just repeat this step: hold the WiFi setup button for 3 seconds and connect to GuppyCare-Setup again.
 
 ## Step 2: Download and install the app
@@ -59,6 +63,18 @@ https://github.com/slisanz/GuppyCare_apk/releases/latest
 1. Open the GuppyCare app.
 2. Sign in with your Google account.
 3. Enter the device id and connect to your device. After that the home screen shows the feeding schedule, feed amount, and water status, and you can control everything from your phone.
+
+<p align="center">
+  <img src="images/app-login.jpg" width="250" alt="Sign in with Google">
+  <img src="images/app-device-id.jpg" width="250" alt="Enter the device id">
+  <img src="images/app-control.jpg" width="250" alt="Home screen with the feeding schedule, feed amount, and water status">
+</p>
+
+When the aquarium water gets dirty, the app also sends a notification straight to your phone, so you know it is time for a water change:
+
+<p align="center">
+  <img src="images/app-notification.jpg" width="250" alt="Water quality notification on the phone">
+</p>
 
 ## Notes
 
