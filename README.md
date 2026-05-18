@@ -88,18 +88,26 @@ https://github.com/slisanz/GuppyCare_apk/releases/latest
 
 1. Open the GuppyCare app.
 2. Sign in with your Google account.
-3. Enter the device id and connect to your device. After that the home screen shows the feeding schedule, feed amount, and water status, and you can control everything from your phone.
+3. On the Account and Device screen, type the device id in the field and tap the connect button. The device id is the MAC address of the ESP32. It is printed on the Serial Monitor when the device boots, for example 383B67C8E720.
+4. Once connected, the home screen shows the feeding schedule, the feed amount, and the water status. You can control everything from your phone.
 
 <p align="center">
   <img src="images/app-login.jpg" width="250" alt="Sign in with Google">
-  <img src="images/app-device-id.jpg" width="250" alt="Enter the device id">
+  <img src="images/app-device-id.jpg" width="250" alt="Account and Device screen, enter the device id">
   <img src="images/app-control.jpg" width="250" alt="Home screen with the feeding schedule, feed amount, and water status">
 </p>
+
+### Managing your devices
+
+Open the Account and Device screen any time from the icon in the top bar of the home screen. It shows the account you signed in with and every device linked to that account. From here you can connect another device, switch the app to a device you already linked, or release a device you no longer use.
+
+<p align="center"><img src="images/app-devices.jpg" width="250" alt="List of linked devices with the option to switch or release a device"></p>
 
 ## Notes
 
 - Keep the device powered and on your home WiFi so the app stays in sync. If you unplug it, the app shows the device as offline until you power it back on.
-- One device can be used by more than one phone. Each person signs in with their own Google account and connects to the same device id.
+- The first Google account that connects to a device becomes its owner. If a different account needs that device, the current owner opens the Account and Device screen and releases it first. After it is released, the other account can connect to the same device id.
+- One account can keep several devices linked and switch between them from the Account and Device screen.
 
 ## For developers
 

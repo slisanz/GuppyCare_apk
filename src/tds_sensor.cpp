@@ -28,7 +28,8 @@ static float readOnce() {
     return ppm;
 }
 
-static void evaluateAlert(float ppm) {
+// Return true kalau status alert baru saja berubah (perlu sync angka ke RTDB).
+static bool evaluateAlert(float ppm) {
     bool prevAlerting = alerting;
 
     if (ppm > Cfg::TDS_THRESHOLD_PPM) {
@@ -49,7 +50,12 @@ static void evaluateAlert(float ppm) {
     }
 
     if (prevAlerting != alerting) {
-        FirebaseClient::putBool("/tds_alert", alerting);
+        // 1 request atomik: status + angka mendarat di HP barengan.
+        char json[64];
+        snprintf(json, sizeof(json),
+                 "{\"tds_alert\":%s,\"tds_ppm\":%.2f}",
+                 alerting ? "true" : "false", ppm);
+        FirebaseClient::patchJson("", json);
         if (alerting) {
             // Baru saja flip ON -> push notif "ganti air" ke HP.
             char body[96];
@@ -58,11 +64,13 @@ static void evaluateAlert(float ppm) {
                      ppm);
             FcmSender::sendAlert("GuppyCare \xF0\x9F\x90\x9F", body);
         }
+        return true;
     }
+    return false;
 }
 
 void begin() {
-    Serial.println("[TDS] begin (sample 10s, upload 60s, debounce 3x).");
+    Serial.println("[TDS] begin (sample 10s, upload 30s, debounce 3x).");
 }
 
 void poll() {
@@ -77,13 +85,25 @@ void poll() {
         lastPpmVal = ppm;
         Serial.printf("[TDS] %.1f ppm  (high=%d low=%d alert=%s)\n",
                       ppm, highStreak, lowStreak, alerting ? "ON" : "off");
-        evaluateAlert(ppm);
+        // Kalau status alert flip, evaluateAlert() sudah PATCH tds_alert +
+        // tds_ppm sekaligus (atomik). Reset lastUpload biar siklus 60s nggak
+        // langsung nimpa dgn write redundan.
+        if (evaluateAlert(ppm)) {
+            lastUpload = now;
+        }
     }
 
-    // Upload ke RTDB tiap 60 detik
+    // Upload berkala ke RTDB: 1 PATCH atomik bawa tds_ppm + tds_alert
+    // sekaligus -> angka & status SELALU mendarat di app berbarengan
+    // (1 event RTDB), nggak ada lagi "angka berubah duluan, status nyusul".
+    // Jumlah request sama (1 per siklus), cuma PATCH 2 field, bukan PUT 1.
     if (lastPpmVal >= 0 && now - lastUpload >= Cfg::TDS_UPLOAD_INTERVAL_MS) {
         lastUpload = now;
-        FirebaseClient::putFloat("/tds_ppm", lastPpmVal);
+        char json[64];
+        snprintf(json, sizeof(json),
+                 "{\"tds_ppm\":%.2f,\"tds_alert\":%s}",
+                 lastPpmVal, alerting ? "true" : "false");
+        FirebaseClient::patchJson("", json);
     }
 }
 

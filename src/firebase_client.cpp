@@ -18,6 +18,11 @@ static String buildUrl(const String& subPath) {
          + "/devices/" + s_deviceId + p + ".json";
 }
 
+// Jumlah percobaan utk error koneksi/TLS transient (SSL EOF, connection
+// refused). code <= 0 = level koneksi -> layak retry. code >= 400 =
+// ditolak server (rules/format) -> percuma retry.
+static constexpr int FB_MAX_TRIES = 3;
+
 // PUT helper. body adalah JSON literal (mis. "true", "12.5", "\"hello\"").
 static bool putRaw(const String& subPath, const String& body) {
     if (WiFi.status() != WL_CONNECTED) {
@@ -25,29 +30,39 @@ static bool putRaw(const String& subPath, const String& body) {
         return false;
     }
 
-    WiFiClientSecure ssl;
-    ssl.setInsecure();  // skip CA validation untuk simplicity
-
-    HTTPClient http;
     String url = buildUrl(subPath);
-    if (!http.begin(ssl, url)) {
-        Serial.printf("[FB] PUT begin() FAIL  url=%s\n", url.c_str());
-        return false;
-    }
-    http.addHeader("Content-Type", "application/json");
+    for (int attempt = 1; attempt <= FB_MAX_TRIES; attempt++) {
+        WiFiClientSecure ssl;
+        ssl.setInsecure();  // skip CA validation untuk simplicity
 
-    int code = http.PUT(body);
-    String resp = http.getString();
-    http.end();
+        HTTPClient http;
+        if (!http.begin(ssl, url)) {
+            Serial.printf("[FB] PUT begin() FAIL  url=%s\n", url.c_str());
+            return false;
+        }
+        http.addHeader("Content-Type", "application/json");
 
-    if (code >= 200 && code < 300) {
-        Serial.printf("[FB] PUT %s OK (%d)\n", subPath.c_str(), code);
-        return true;
-    } else {
-        Serial.printf("[FB] PUT %s FAIL code=%d resp=%s\n",
-                      subPath.c_str(), code, resp.c_str());
-        return false;
+        int code = http.PUT(body);
+        String resp = http.getString();
+        http.end();
+
+        if (code >= 200 && code < 300) {
+            Serial.printf("[FB] PUT %s OK (%d)%s\n", subPath.c_str(), code,
+                          attempt > 1 ? " [retry]" : "");
+            return true;
+        }
+        if (code > 0) {  // ditolak server, retry percuma
+            Serial.printf("[FB] PUT %s FAIL code=%d resp=%s\n",
+                          subPath.c_str(), code, resp.c_str());
+            return false;
+        }
+        Serial.printf("[FB] PUT %s koneksi gagal code=%d (coba %d/%d)\n",
+                      subPath.c_str(), code, attempt, FB_MAX_TRIES);
+        if (attempt < FB_MAX_TRIES) delay(400);
     }
+    Serial.printf("[FB] PUT %s FAIL — habis %d kali coba\n",
+                  subPath.c_str(), FB_MAX_TRIES);
+    return false;
 }
 
 bool putBool(const String& subPath, bool value) {
@@ -69,32 +84,76 @@ bool putString(const String& subPath, const String& value) {
     return putRaw(subPath, "\"" + value + "\"");
 }
 
-String getRaw(const String& subPath) {
+bool patchJson(const String& subPath, const String& jsonBody) {
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("[FB] GET skip — WiFi DOWN");
-        return String();
+        Serial.println("[FB] PATCH skip — WiFi DOWN");
+        return false;
     }
 
     WiFiClientSecure ssl;
     ssl.setInsecure();
 
     HTTPClient http;
-    String url = buildUrl(subPath);
+    // subPath "" -> PATCH di root device (/devices/{id}.json), update banyak
+    // child sekaligus dalam 1 request -> 1 handshake TLS, 1 event RTDB.
+    String p = subPath;
+    if (p.length() && !p.startsWith("/")) p = "/" + p;
+    String url = String(FbCfg::DATABASE_URL)
+               + "/devices/" + s_deviceId + p + ".json";
     if (!http.begin(ssl, url)) {
-        Serial.printf("[FB] GET begin() FAIL  url=%s\n", url.c_str());
-        return String();
+        Serial.printf("[FB] PATCH begin() FAIL  url=%s\n", url.c_str());
+        return false;
     }
+    http.addHeader("Content-Type", "application/json");
 
-    int code = http.GET();
+    int code = http.sendRequest("PATCH", jsonBody);
     String resp = http.getString();
     http.end();
 
     if (code >= 200 && code < 300) {
-        return resp;
+        Serial.printf("[FB] PATCH OK (%d) %s\n", code, jsonBody.c_str());
+        return true;
     } else {
-        Serial.printf("[FB] GET %s FAIL code=%d\n", subPath.c_str(), code);
+        Serial.printf("[FB] PATCH FAIL code=%d resp=%s\n",
+                      code, resp.c_str());
+        return false;
+    }
+}
+
+String getRaw(const String& subPath) {
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("[FB] GET skip — WiFi DOWN");
         return String();
     }
+
+    String url = buildUrl(subPath);
+    for (int attempt = 1; attempt <= FB_MAX_TRIES; attempt++) {
+        WiFiClientSecure ssl;
+        ssl.setInsecure();
+
+        HTTPClient http;
+        if (!http.begin(ssl, url)) {
+            Serial.printf("[FB] GET begin() FAIL  url=%s\n", url.c_str());
+            return String();
+        }
+
+        int code = http.GET();
+        String resp = http.getString();
+        http.end();
+
+        if (code >= 200 && code < 300) return resp;
+        if (code > 0) {  // ditolak server, retry percuma
+            Serial.printf("[FB] GET %s FAIL code=%d\n",
+                          subPath.c_str(), code);
+            return String();
+        }
+        Serial.printf("[FB] GET %s koneksi gagal code=%d (coba %d/%d)\n",
+                      subPath.c_str(), code, attempt, FB_MAX_TRIES);
+        if (attempt < FB_MAX_TRIES) delay(400);
+    }
+    Serial.printf("[FB] GET %s FAIL — habis %d kali coba\n",
+                  subPath.c_str(), FB_MAX_TRIES);
+    return String();
 }
 
 }  // namespace FirebaseClient

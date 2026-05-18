@@ -12,8 +12,9 @@ void begin() {
     servo.attach(Pins::SERVO,
                  Cfg::SERVO_PWM_MIN_US,
                  Cfg::SERVO_PWM_MAX_US);
-    servo.writeMicroseconds(Cfg::SERVO_PULSE_NEUTRAL_US);
-    Serial.println("[Feeder] servo armed di NEUTRAL.");
+    servo.write(Cfg::SERVO_ANGLE_CLOSED);
+    Serial.printf("[Feeder] servo positional armed di CLOSED (%d deg).\n",
+                  Cfg::SERVO_ANGLE_CLOSED);
 }
 
 void feedPortion(int portion_mg) {
@@ -24,22 +25,25 @@ void feedPortion(int portion_mg) {
 
     Serial.printf("[Feeder] FEED %d mg (hold open %d ms)\n", portion_mg, holdMs);
 
-    // 1) Rotasi buka
-    servo.writeMicroseconds(Cfg::SERVO_PULSE_OPEN_US);
-    delay(Cfg::SERVO_ROTATE_MS);
+    // 1) Buka: putar servo ke sudut OPEN (90 deg), tunggu sampai posisi
+    servo.write(Cfg::SERVO_ANGLE_OPEN);
+    delay(Cfg::SERVO_MOVE_MS);
 
-    // 2) Gerbang stay open — pakan jatuh
-    servo.writeMicroseconds(Cfg::SERVO_PULSE_NEUTRAL_US);
+    // 2) Gerbang tahan terbuka — pakan jatuh sesuai porsi
     delay(holdMs);
 
-    // 3) Rotasi tutup
-    servo.writeMicroseconds(Cfg::SERVO_PULSE_CLOSE_US);
-    delay(Cfg::SERVO_ROTATE_MS);
-
-    // 4) Diam
-    servo.writeMicroseconds(Cfg::SERVO_PULSE_NEUTRAL_US);
+    // 3) Tutup: putar balik ke sudut CLOSED (90 deg lawan arah), tunggu
+    servo.write(Cfg::SERVO_ANGLE_CLOSED);
+    delay(Cfg::SERVO_MOVE_MS);
 
     Serial.println("[Feeder] DONE.");
+}
+
+void moveTo(int deg) {
+    if (deg < 0)   deg = 0;
+    if (deg > 180) deg = 180;
+    servo.write(deg);
+    Serial.printf("[Feeder] servo -> %d deg\n", deg);
 }
 
 }  // namespace Feeder

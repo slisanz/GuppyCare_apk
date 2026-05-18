@@ -25,6 +25,7 @@
 //   "wifi_reset"  -> hapus credential WiFi & reboot
 //   "ping"        -> heartbeat manual ke Firebase
 //   "feed N"      -> feed N mg langsung (bypass scheduler)
+//   "servo open|close|N" -> tuning sudut servo positional (0-180)
 //   "seed"        -> tulis 3 jadwal default ke RTDB
 //   "trigger"     -> set manual_feed_trigger=true
 //   "alert on"    -> paksa tds_alert true (test FCM nanti)
@@ -110,12 +111,31 @@ void handleSerialCommand(String cmd) {
         int mg = cmd.substring(5).toInt();
         if (mg < 1) mg = 10;
         Feeder::feedPortion(mg);
+    } else if (cmd == "servo open") {
+        Feeder::moveTo(Cfg::SERVO_ANGLE_OPEN);
+    } else if (cmd == "servo close") {
+        Feeder::moveTo(Cfg::SERVO_ANGLE_CLOSED);
+    } else if (cmd.startsWith("servo ")) {
+        Feeder::moveTo(cmd.substring(6).toInt());
     } else if (cmd == "alert on") {
-        FirebaseClient::putBool("/tds_alert", true);
-        Serial.println("[main] tds_alert=true (forced, untuk test FCM Phase 7).");
+        // Forced test: 1 request atomik (PATCH) biar status + angka mendarat
+        // di HP barengan. Sample sensor asli (<=10s kemudian) tetap akan
+        // overwrite tds_ppm dgn bacaan beneran.
+        float dirtyPpm = (float)Cfg::TDS_THRESHOLD_PPM + 150.0f;
+        char json[64];
+        snprintf(json, sizeof(json),
+                 "{\"tds_alert\":true,\"tds_ppm\":%.2f}", dirtyPpm);
+        FirebaseClient::patchJson("", json);
+        Serial.printf("[main] tds_alert=true + tds_ppm=%.0f (forced test).\n",
+                      dirtyPpm);
     } else if (cmd == "alert off") {
-        FirebaseClient::putBool("/tds_alert", false);
-        Serial.println("[main] tds_alert=false (forced).");
+        float cleanPpm = 120.0f;
+        char json[64];
+        snprintf(json, sizeof(json),
+                 "{\"tds_alert\":false,\"tds_ppm\":%.2f}", cleanPpm);
+        FirebaseClient::patchJson("", json);
+        Serial.printf("[main] tds_alert=false + tds_ppm=%.0f (forced).\n",
+                      cleanPpm);
     } else if (cmd == "notif") {
         Serial.println("[main] kirim test notif FCM...");
         int n = FcmSender::sendAlert("GuppyCare \xF0\x9F\x90\x9F",
@@ -123,7 +143,7 @@ void handleSerialCommand(String cmd) {
         Serial.printf("[main] hasil: %d notif terkirim\n", n);
     } else if (cmd.length() > 0) {
         Serial.printf("[?] Command '%s' tidak dikenali.\n", cmd.c_str());
-        Serial.println("    Pakai: ? | wifi_reset | ping | seed | trigger | feed N | alert on|off | notif");
+        Serial.println("    Pakai: ? | wifi_reset | ping | seed | trigger | feed N | servo open|close|N | alert on|off | notif");
     }
 }
 
@@ -169,7 +189,7 @@ void setup() {
 
     Serial.println();
     Serial.println(">>> Phase 4 siap. Full system jalan.");
-    Serial.println(">>> Command: ? | seed | trigger | feed N | alert on|off | notif | wifi_reset");
+    Serial.println(">>> Command: ? | seed | trigger | feed N | servo open|close|N | alert on|off | notif | wifi_reset");
     Serial.println(">>> Tombol fisik GPIO13: tahan 3 detik untuk reset WiFi.");
     Serial.println();
 }

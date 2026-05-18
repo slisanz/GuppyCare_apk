@@ -2,11 +2,17 @@
 #include <Arduino.h>
 
 namespace Feeder {
-    // Attach servo ke pin & set NEUTRAL. Panggil sekali di setup().
+    // Attach servo positional ke pin & set ke sudut CLOSED. Panggil sekali
+    // di setup().
     void begin();
 
     // Jalankan satu siklus feed dengan porsi tertentu (mg). Di-clamp 1..1000 mg.
-    // Sequence: OPEN 200ms -> hold NEUTRAL (portion_mg * SERVO_MS_PER_MG) -> CLOSE 200ms -> NEUTRAL.
-    // Blocking, durasi total ~400ms + portion_mg*50ms (1000mg = ~50.4s).
+    // Servo positional: putar ke SERVO_ANGLE_OPEN (90 deg) -> tahan terbuka
+    // (portion_mg * SERVO_MS_PER_MG) -> putar balik ke SERVO_ANGLE_CLOSED.
+    // Blocking, durasi total ~(2*SERVO_MOVE_MS) + portion_mg*50ms.
     void feedPortion(int portion_mg);
+
+    // Putar servo langsung ke sudut deg (0..180). Untuk tuning mounting
+    // lewat command Serial `servo`. Tidak dipakai di alur feed normal.
+    void moveTo(int deg);
 }

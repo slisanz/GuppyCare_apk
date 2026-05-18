@@ -3,7 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
-import 'screens/device_setup_screen.dart';
+import 'screens/device_manager_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
@@ -46,7 +46,9 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-  bool _fcmRegistered = false;
+  // device_id terakhir yang FCM token-nya sudah didaftarkan. Dipakai
+  // supaya pindah device ikut menulis token ke device baru.
+  String? _fcmDeviceId;
 
   @override
   Widget build(BuildContext context) {
@@ -67,16 +69,17 @@ class _AuthGateState extends State<AuthGate> {
 
             final user = snap.data;
             if (user == null) {
-              _fcmRegistered = false;
+              _fcmDeviceId = null;
               return const LoginScreen();
             }
 
             if (!DeviceService.instance.hasDevice) {
-              return DeviceSetupScreen(onLinked: () => setState(() {}));
+              return DeviceManagerScreen(onLinked: () => setState(() {}));
             }
 
-            if (!_fcmRegistered) {
-              _fcmRegistered = true;
+            final id = DeviceService.instance.deviceId;
+            if (_fcmDeviceId != id) {
+              _fcmDeviceId = id;
               FcmService.instance.registerForDevice();
             }
             return const HomeScreen();

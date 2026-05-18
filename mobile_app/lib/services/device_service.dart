@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -37,6 +39,60 @@ class DeviceService {
   DatabaseReference _root(String id) => _db.ref('devices/$id');
 
   String get _uid => FirebaseAuth.instance.currentUser!.uid;
+  String? get _uidOrNull => FirebaseAuth.instance.currentUser?.uid;
+
+  // ---- Daftar device per akun (lokal, key per-uid) ------------------
+  // Indeks kenyamanan saja. Sumber kebenaran kepemilikan tetap
+  // /devices/{id}/owner_uid di RTDB.
+  final List<String> _linked = [];
+  List<String> get linkedDevices => List.unmodifiable(_linked);
+
+  String _linkedKey(String uid) => 'linked_devices_$uid';
+
+  /// Muat daftar device milik akun yang sedang login. Migrasi sekali:
+  /// kalau daftar kosong tapi ada active device lama (linked_device_id),
+  /// jadikan seed daftar. Dipanggil dari DeviceManagerScreen.initState.
+  Future<void> loadLinkedForUser() async {
+    final uid = _uidOrNull;
+    _linked.clear();
+    if (uid == null) return;
+    final p = await SharedPreferences.getInstance();
+    final raw = p.getString(_linkedKey(uid));
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          _linked.addAll(decoded.map((e) => e.toString().toUpperCase()));
+        }
+      } catch (_) {
+        // data korup -> abaikan, mulai dari kosong
+      }
+    }
+    final active = (_deviceId ?? '').toUpperCase();
+    if (_linked.isEmpty && active.isNotEmpty) {
+      _linked.add(active);
+      await _saveLinked();
+    }
+  }
+
+  Future<void> _saveLinked() async {
+    final uid = _uidOrNull;
+    if (uid == null) return;
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_linkedKey(uid), jsonEncode(_linked));
+  }
+
+  Future<void> addToLinked(String id) async {
+    final n = id.trim().toUpperCase();
+    if (n.isEmpty || _linked.contains(n)) return;
+    _linked.add(n);
+    await _saveLinked();
+  }
+
+  Future<void> removeFromLinked(String id) async {
+    final n = id.trim().toUpperCase();
+    if (_linked.remove(n)) await _saveLinked();
+  }
 
   /// Muat device_id yang sudah pernah dihubungkan (dipanggil saat boot).
   Future<void> loadPersisted() async {
@@ -84,13 +140,59 @@ class DeviceService {
     if (owner.isEmpty) {
       await ref.child('owner_uid').set(_uid);
       await useDevice(normId);
+      await addToLinked(normId);
       return ClaimResult.claimed;
     }
     if (owner == _uid || sharedList.contains(_uid)) {
       await useDevice(normId);
+      await addToLinked(normId);
       return ClaimResult.ok;
     }
     return ClaimResult.ownedByOther;
+  }
+
+  /// Lepas device dari akun ini: kosongkan owner_uid (kalau kita owner),
+  /// buang uid dari shared_uids, hapus fcm token kita, dan buang dari
+  /// daftar lokal. Setelah ini device bisa diklaim email lain.
+  Future<void> unlinkDevice(String id) async {
+    final normId = id.trim().toUpperCase();
+    final uid = _uidOrNull;
+    if (uid == null) return;
+    final ref = _root(normId);
+
+    final snap = await ref.get();
+    if (snap.exists && snap.value is Map) {
+      final data = snap.value as Map;
+
+      if ((data['owner_uid'] ?? '').toString() == uid) {
+        await ref.child('owner_uid').set('');
+      }
+
+      final shared = data['shared_uids'];
+      final sharedList = shared is List
+          ? shared.map((e) => e.toString()).toList()
+          : (shared is Map
+              ? shared.values.map((e) => e.toString()).toList()
+              : <String>[]);
+      if (sharedList.contains(uid)) {
+        sharedList.remove(uid);
+        if (sharedList.isEmpty) {
+          await ref.child('shared_uids').remove();
+        } else {
+          await ref.child('shared_uids').set(sharedList);
+        }
+      }
+
+      await ref.child('fcm_tokens/$uid').remove();
+    }
+
+    await removeFromLinked(normId);
+
+    if ((_deviceId ?? '').toUpperCase() == normId) {
+      await clearDevice(); // bump revision -> AuthGate keluar dari device ini
+    } else {
+      revision.value++; // refresh layar manager
+    }
   }
 
   /// Stream state device untuk StreamBuilder di home screen.

@@ -7,6 +7,7 @@ import '../models/device_state.dart';
 import '../services/auth_service.dart';
 import '../services/device_service.dart';
 import '../theme.dart';
+import 'device_manager_screen.dart';
 
 /// Layar utama mengikuti layout GuppyCare.jpeg:
 /// Feeding Schedule (3 jadwal) + Feed Amount (slider) + Alert banner.
@@ -145,17 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return ok ?? false;
   }
 
-  /// Hapus device tersimpan, tetap login Google. `clearDevice()` bump
-  /// `revision` -> AuthGate rebuild -> DeviceSetupScreen (tanpa loading).
-  Future<void> _changeDevice() async {
-    if (!await _confirm(
-      'Ganti Device',
-      'Putuskan dari device sekarang dan isi Device ID lain? '
-          'Akun Google kamu tetap login.',
-    )) {
-      return;
-    }
-    await DeviceService.instance.clearDevice();
+  void _openDeviceManager() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const DeviceManagerScreen()),
+    );
   }
 
   /// Hapus device tersimpan + logout Google. `signOut()` -> stream auth
@@ -213,9 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.info_outline),
           ),
           IconButton(
-            tooltip: 'Ganti Device',
-            onPressed: _changeDevice,
-            icon: const Icon(Icons.swap_horiz),
+            tooltip: 'Akun & Device',
+            onPressed: _openDeviceManager,
+            icon: const Icon(Icons.devices_other),
           ),
           IconButton(
             tooltip: 'Keluar',

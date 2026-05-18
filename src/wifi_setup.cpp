@@ -27,6 +27,14 @@ bool begin() {
         return false;
     }
 
+    // Matikan modem-sleep: default ESP32 nidurin radio di antara beacon
+    // -> TLS handshake ke Firebase suka keputus (-29312 SSL EOF /
+    // connection refused) walau WiFi "connected". Ini penyebab utama
+    // device keliatan offline intermiten. Auto-reconnect kalau AP drop.
+    WiFi.setSleep(false);
+    WiFi.setAutoReconnect(true);
+    WiFi.persistent(true);
+
     Serial.printf("[WiFi] OK  SSID=%s  IP=%s  RSSI=%d dBm\n",
                   WiFi.SSID().c_str(),
                   WiFi.localIP().toString().c_str(),
