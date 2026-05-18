@@ -103,6 +103,14 @@ Open the Account and Device screen any time from the icon in the top bar of the 
 
 <p align="center"><img src="images/app-devices.jpg" width="250" alt="List of linked devices with the option to switch or release a device"></p>
 
+## Step 4: Allow notifications
+
+GuppyCare warns you when the water gets dirty, so the app needs permission to send notifications. The first time you open the app, Android asks whether GuppyCare can send notifications. Tap Allow. If you tapped Deny or missed the prompt, turn it on later in your phone Settings, then Apps, then GuppyCare, then Notifications, and make sure notifications are on.
+
+When the water reading goes above 600 ppm, you get an alert like this, even when the app is closed.
+
+<p align="center"><img src="images/app-notification.jpg" width="250" alt="Notification saying the water is dirty and should be changed"></p>
+
 ## Notes
 
 - Keep the device powered and on your home WiFi so the app stays in sync. If you unplug it, the app shows the device as offline until you power it back on.
