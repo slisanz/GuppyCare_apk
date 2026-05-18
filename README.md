@@ -8,7 +8,7 @@ What it does:
 - Feed amount: set the portion from 1 to 1000 mg with a slider or by typing a number. An SG90 servo opens the feed gate for the matching amount.
 - Water monitoring: when the water gets dirty (TDS above 600 ppm), the app sends a notification to your phone.
 
-The app is free. You install it by downloading the APK below, not from the Play Store.
+The app is free. You install it by downloading the APK below.
 
 This guide is written for the person who actually uses the device. Follow it in order: first set up the device, then download and install the app, then open the app for the first time.
 
